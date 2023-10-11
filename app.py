@@ -4,39 +4,19 @@ import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cdist
 from docplex.mp.model import Model
-from my_functions import fitness_function, generate_population, crossover, clustering_solution
+from my_functions import fitness_function, generate_population, crossover, clustering_solution, change_sizeOf_parameters
 from readFile_function import read_file
-
-# Define the Model
-
-# MWMS_model = Model(name="Linear Program")
-
-# # Variables
-# x = MWMS_model.continuous_var(name='x', lb=0)
-# y = MWMS_model.continuous_var(name='y', lb=0)
-
-# # Constraints
-# c1 = MWMS_model.add_constraint(x+y >= 8, ctname="c1")
-# c2 = MWMS_model.add_constraint(2*x+y >= 10, ctname="c2")
-# c3 = MWMS_model.add_constraint(x+4*y >= 11, ctname="c3")
-
-# # Objective Function
-# obj = 5*x+4*y
-# MWMS_model.set_objective('min', obj)
-# MWMS_model.print_information()
-
-# # Solvig
-# solution = MWMS_model.solve()
-
-# # Output
-# print(solution)
-
+from mathematical_model import TaxPolicy, CapTradePolicy, CapPolicy, OfsetPolicy
 
 # Problem Definition
 numOfFactories = 24
-finalClusters = 3
-clusters_hypo = 3*finalClusters  # seed_points_count
-
+finalClusters = 1
+clusters_hypo = 1*finalClusters  # seed_points_count
+Emax = 2000000000
+H = 0.04                         # carbon price
+M = 10000000000                  # big number
+gamma = 0.05                     # polution cost
+tax = 0.11
 
 # GA Parameters
 
@@ -51,7 +31,7 @@ pMutation = 0.3                          # Mutation Percentage
 nMutation = round(pMutation*population_size)        # Number of Mutants
 mu = 0.1                                 # Mutation Rate
 
-beta = 8                                 # Selection Pressure
+slp = 8                                 # Selection Pressure
 # percentage of New otherClusters that investigate
 percentSel = 0.2
 
@@ -106,16 +86,16 @@ for it in range(MaxIt):
 
     BestSol = solutions[0]
     BestCost.append(BestSol.get('Objective_Func'))
-    print(BestSol.get('Objective_Func'))
+    # print(BestSol.get('Objective_Func'))
 
 best_chromosome = BestSol.get('seed_points')
 
-for seed_point in best_chromosome:
-    print(seed_point)
+# for seed_point in best_chromosome:
+#     print(seed_point)
 
 
 ClusterMembers = clustering_solution(best_chromosome, Vic)
-print(ClusterMembers)
+# print(ClusterMembers)
 
 TaxClusters = []
 CapTradeClusters = []
@@ -126,3 +106,24 @@ clusters = []
 for clusterNum in range(1, clusters_hypo+1):
     # factories numbers in cluster
     factNums = [i for i, x in enumerate(ClusterMembers) if x == clusterNum]
+    print(factNums)
+    [Vicn, CEn, CErn, Dn, Capn, PCn, PCrn, SPn, FCn] = change_sizeOf_parameters(
+        Vic, CE, CEr, D, Cap, PC, PCr, SP, FC, factNums)
+
+    [status, objective_function, Q, W, QW] = TaxPolicy(
+        CEn, CErn, Dn, Capn, PCn, PCrn, SPn, FCn, len(factNums), tax, gamma)
+    [status, objective_function, beta, Q, W, QW, eb, es] = CapTradePolicy(
+        CEn, CErn, Dn, Capn, PCn, PCrn, SPn, FCn, len(factNums), Emax, H, M, gamma)
+    [status, objective_function, beta, Q, W, QW] = CapPolicy(
+        CEn, CErn, Dn, Capn, PCn, PCrn, SPn, FCn, len(factNums), Emax, M, gamma)
+    [status, objective_function, beta, Q, W, QW, eb] = OfsetPolicy(
+        CEn, CErn, Dn, Capn, PCn, PCrn, SPn, FCn, len(factNums), Emax, H, M, gamma)
+
+    print('Solution status:', status)
+    print("Objective value:", objective_function)
+    # print('beta:', beta)
+    print('Q:', Q)
+    print('W:', W)
+    print('QW:', QW)
+    # print('eb:', eb)
+    # print('es:', es)

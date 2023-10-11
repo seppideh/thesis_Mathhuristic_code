@@ -54,6 +54,19 @@ def clustering_solution(seed_points,Vic):
         min_index.append(row.index(min(row))+1)
     return min_index
 
+def change_sizeOf_parameters(Vic, CE, CEr, D, Cap, PC, PCr, SP, FC,factNums):
+    Vic=[Vic[i] for i in factNums]
+    CE=[CE[i] for i in factNums]
+    CEr=[CEr[i] for i in factNums]
+    D=[D[i] for i in factNums]
+    Cap=[Cap[i] for i in factNums]
+    PC=[PC[i] for i in factNums]
+    PCr=[PCr[i] for i in factNums]
+    SP=[SP[i] for i in factNums]
+    FC=[FC[i] for i in factNums]
+    
+    return Vic, CE, CEr, D, Cap, PC, PCr, SP, FC
+
 
 class ClusteringSolution:
     def seedNumbers(self):
